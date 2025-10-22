@@ -291,7 +291,7 @@ def assign_clusters(df: pd.DataFrame, kmeans, scaler):
     return df
 
 
-def create_global_segments(df: pd.DataFrame):
+def create_global_segments(df: pd.DataFrame, n_segments: int = 5):
     cluster_stats = []
     for cluster in sorted(df['KMeans_Cluster'].unique()):
         subset = df[df['KMeans_Cluster'] == cluster]
@@ -299,7 +299,7 @@ def create_global_segments(df: pd.DataFrame):
         avg_f = subset['frequency_score'].mean()
         avg_m = subset['monetary_score'].mean()
 
-        value_score = avg_f * 0.4 + avg_m * 0.4 + (6 - avg_r) * 0.2
+        value_score = avg_f * 0.34 + avg_m * 0.33 + avg_r* 0.33
 
         stats = {
             'cluster': cluster,
@@ -313,7 +313,11 @@ def create_global_segments(df: pd.DataFrame):
 
     dim_segment = pd.DataFrame(cluster_stats)
     dim_segment = dim_segment.sort_values('value_score', ascending=True).reset_index(drop=True)
-    dim_segment['segmentkey'] = dim_segment.index + 1
+    dim_segment['segmentkey'] =pd.qcut(
+        dim_segment['value_score'],
+        q=n_segments,
+        labels=range(1, n_segments + 1)
+    ).astype('int32')
 
     mapping = dict(zip(dim_segment['cluster'], dim_segment['segmentkey']))
     df['segmentkey'] = df['KMeans_Cluster'].map(mapping).astype('int32')
